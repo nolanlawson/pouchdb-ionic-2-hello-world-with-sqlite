@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
-
+import { Platform } from 'ionic-angular';
 import { NavController } from 'ionic-angular';
 
 import * as PouchDB from 'pouchdb-browser';
+import * as cordovaSqlitePlugin from 'pouchdb-adapter-cordova-sqlite';
+PouchDB.plugin(cordovaSqlitePlugin);
 
 @Component({
   selector: 'page-home',
@@ -13,12 +15,14 @@ export class HomePage {
   pouchdbLoaded: boolean;
   idbSupported: boolean;
   websqlSupported: boolean;
+  cordovaSqliteSupported: boolean;
+  nativeSqlitePluginInstalled: boolean;
 
-  constructor(public navCtrl: NavController) {
+  constructor(public navCtrl: NavController, platform: Platform) {
     this.pouchdbLoaded = false;
-    this.idbSupported = false;
-    this.websqlSupported = false;
-    this.loadPouchDB();
+    platform.ready().then(() => {
+      this.loadPouchDB();
+    });
   }
 
   loadPouchDB() {
@@ -33,12 +37,16 @@ export class HomePage {
 
     var promises = [
       checkAdapterWorks('idb'),
-      checkAdapterWorks('websql')
+      checkAdapterWorks('websql'),
+      checkAdapterWorks('cordova-sqlite'),
+      Promise.resolve(!!window.sqlitePlugin)
     ];
 
     Promise.all(promises).then(function (results) {
       self.idbSupported = results[0];
       self.websqlSupported = results[1];
+      self.cordovaSqliteSupported = results[2];
+      self.nativeSqlitePluginInstalled = results[3];
       self.pouchdbLoaded = true;
     });
   }
